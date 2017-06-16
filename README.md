@@ -1,6 +1,6 @@
 # AWS IoT Examples
 
-Temperature control example. It communicates via AWS IoT shadow device, updating clients in real-time:
+Temperature control example. It communicates via AWS IoT device shadow, updating clients in real-time:
 
 To run:
 
