@@ -1,5 +1,7 @@
 # AWS IoT Examples
 
+Temperature control example. It communicates via AWS IoT shadow device, updating clients in real-time:
+
 To run:
 
 Clone this branch:
@@ -17,10 +19,14 @@ npm i
 Run the client:
 
 ```
-./run-temperature-example1.sh
+./run-temperature-client.sh
 ```
 
 Press up/down arrows to change the temperature. You can also use the right arrow and press enter to disconnect from the network to simulate network problems. (See temperature-control.js under examples below for more details)
+
+## Note
+
+As long as one person is running ./run-temperature-device.sh, then everyone can set the temperature. If multiple people run the device, the interface will get all messed up as the device exists more than once.
 
 # AWS IoT SDK for JavaScript
 The aws-iot-device-sdk.js package allows developers to write JavaScript
