@@ -18,7 +18,7 @@
  * example application.
  */
 var awsConfiguration = {
-   poolId: YOUR_COGNITO_IDENTITY_POOL_ID_GOES_HERE, // 'YourCognitoIdentityPoolId'
-   region: YOUR_AWS_REGION_GOES_HERE // 'YourAwsRegion', e.g. 'us-east-1'
+   poolId: 'ap-southeast-2:d00d023c-14fc-4583-bbee-ba1d9030fcab',
+   region: 'ap-southeast-2'
 };
 module.exports = awsConfiguration;
