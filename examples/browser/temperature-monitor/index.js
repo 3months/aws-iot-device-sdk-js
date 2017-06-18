@@ -13,12 +13,17 @@
  * permissions and limitations under the License.
  */
 
+const devices = [
+  ['TemperatureControl', 'TemperatureStatus'],
+  ['TC1', 'TS1']
+]
+
 //
-// Instantiate the AWS SDK and configuration objects.  The AWS SDK for 
-// JavaScript (aws-sdk) is used for Cognito Identity/Authentication, and 
+// Instantiate the AWS SDK and configuration objects.  The AWS SDK for
+// JavaScript (aws-sdk) is used for Cognito Identity/Authentication, and
 // the AWS IoT SDK for JavaScript (aws-iot-device-sdk) is used for the
 // WebSocket connection to AWS IoT and device shadow APIs.
-// 
+//
 var AWS = require('aws-sdk');
 var AWSIoTData = require('aws-iot-device-sdk');
 var AWSConfiguration = require('./aws-configuration.js');
@@ -41,7 +46,7 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 var shadowsRegistered = false;
 
 //
-// Create the AWS IoT shadows object.  Note that the credentials must be 
+// Create the AWS IoT shadows object.  Note that the credentials must be
 // initialized with empty strings; when we successfully authenticate to
 // the Cognito Identity Pool, the credentials will be dynamically updated.
 //
@@ -69,7 +74,7 @@ const shadows = AWSIoTData.thingShadow({
    //
    debug: true,
    //
-   // IMPORTANT: the AWS access key ID, secret key, and sesion token must be 
+   // IMPORTANT: the AWS access key ID, secret key, and sesion token must be
    // initialized with empty strings.
    //
    accessKeyId: '',
@@ -85,9 +90,17 @@ shadows.on('delta', function(name, stateObject) {
       document.getElementById('temperature-monitor-div').innerHTML = '<p>interior: ' + stateObject.state.intTemp + '</p>' +
          '<p>exterior: ' + stateObject.state.extTemp + '</p>' +
          '<p>state: ' + stateObject.state.curState + '</p>';
-   } else { // name === 'TemperatureControl'
+   } else if (name === 'TemperatureControl')  {
       var enabled = stateObject.state.enabled ? 'enabled' : 'disabled';
       document.getElementById('temperature-control-div').innerHTML = '<p>setpoint: ' + stateObject.state.setPoint + '</p>' +
+         '<p>mode: ' + enabled + '</p>';
+   } else if (name === 'TS1') {
+      document.getElementById('temperature-monitor2-div').innerHTML = '<p>interior: ' + stateObject.state.intTemp + '</p>' +
+         '<p>exterior: ' + stateObject.state.extTemp + '</p>' +
+         '<p>state: ' + stateObject.state.curState + '</p>';
+   } else if (name === 'TC1')  {
+      var enabled = stateObject.state.enabled ? 'enabled' : 'disabled';
+      document.getElementById('temperature-control2-div').innerHTML = '<p>setpoint: ' + stateObject.state.setPoint + '</p>' +
          '<p>mode: ' + enabled + '</p>';
    }
 });
@@ -115,9 +128,17 @@ shadows.on('status', function(name, statusType, clientToken, stateObject) {
          document.getElementById('temperature-monitor-div').innerHTML = '<p>interior: ' + stateObject.state.desired.intTemp + '</p>' +
             '<p>exterior: ' + stateObject.state.desired.extTemp + '</p>' +
             '<p>state: ' + stateObject.state.desired.curState + '</p>';
-      } else { // name === 'TemperatureControl'
+      } else if (name === 'TemperatureControl') {
          var enabled = stateObject.state.desired.enabled ? 'enabled' : 'disabled';
          document.getElementById('temperature-control-div').innerHTML = '<p>setpoint: ' + stateObject.state.desired.setPoint + '</p>' +
+            '<p>    mode: ' + enabled + '</p>';
+      } else if (name === 'TS1') {
+         document.getElementById('temperature-monitor2-div').innerHTML = '<p>interior: ' + stateObject.state.desired.intTemp + '</p>' +
+            '<p>exterior: ' + stateObject.state.desired.extTemp + '</p>' +
+            '<p>state: ' + stateObject.state.desired.curState + '</p>';
+      } else if (name === 'TC1') {
+         var enabled = stateObject.state.desired.enabled ? 'enabled' : 'disabled';
+         document.getElementById('temperature-control2-div').innerHTML = '<p>setpoint: ' + stateObject.state.desired.setPoint + '</p>' +
             '<p>    mode: ' + enabled + '</p>';
       }
    }
@@ -125,7 +146,7 @@ shadows.on('status', function(name, statusType, clientToken, stateObject) {
 
 //
 // Attempt to authenticate to the Cognito Identity Pool.  Note that this
-// example only supports use of a pool which allows unauthenticated 
+// example only supports use of a pool which allows unauthenticated
 // identities.
 //
 var cognitoIdentity = new AWS.CognitoIdentity();
@@ -164,17 +185,25 @@ window.shadowConnectHandler = function() {
    document.getElementById("connecting-div").style.visibility = 'hidden';
    document.getElementById("temperature-monitor-div").style.visibility = 'visible';
    document.getElementById("temperature-control-div").style.visibility = 'visible';
+   document.getElementById("temperature-monitor2-div").style.visibility = 'visible';
+   document.getElementById("temperature-control2-div").style.visibility = 'visible';
 
+   let index;
    //
    // We only register our shadows once.
    //
    if (!shadowsRegistered) {
-      shadows.register('TemperatureStatus', {
-         persistentSubscribe: true
-      });
-      shadows.register('TemperatureControl', {
-         persistentSubscribe: true
-      });
+      for (index = 0; index < devices.length; ++index) {
+        console.info("registering device", devices[index]);
+
+        shadows.register(devices[index][1], {
+           persistentSubscribe: true
+        });
+        shadows.register(devices[index][0], {
+           persistentSubscribe: true
+        });
+      }
+
       shadowsRegistered = true;
    }
    //
@@ -182,13 +211,18 @@ window.shadowConnectHandler = function() {
    // current state of the shadows.
    //
    setTimeout(function() {
-      var opClientToken = shadows.get('TemperatureControl');
-      if (opClientToken === null) {
-         console.log('operation in progress');
-      }
-      opClientToken = shadows.get('TemperatureStatus');
-      if (opClientToken === null) {
-         console.log('operation in progress');
+      let opClientToken;
+      for (index = 0; index < devices.length; ++index) {
+        console.info("get device state", devices[index]);
+
+        opClientToken = shadows.get(devices[index][0]);
+        if (opClientToken === null) {
+           console.log('operation in progress');
+        }
+        opClientToken = shadows.get(devices[index][1]);
+        if (opClientToken === null) {
+           console.log('operation in progress');
+        }
       }
    }, 3000);
 };
@@ -201,6 +235,8 @@ window.shadowReconnectHandler = function() {
    document.getElementById("connecting-div").style.visibility = 'visible';
    document.getElementById("temperature-monitor-div").style.visibility = 'hidden';
    document.getElementById("temperature-control-div").style.visibility = 'hidden';
+   document.getElementById("temperature-monitor2-div").style.visibility = 'hidden';
+   document.getElementById("temperature-control2-div").style.visibility = 'hidden';
 };
 
 //
@@ -215,6 +251,10 @@ shadows.on('reconnect', window.shadowReconnectHandler);
 document.getElementById('connecting-div').style.visibility = 'visible';
 document.getElementById('temperature-control-div').style.visibility = 'hidden';
 document.getElementById('temperature-monitor-div').style.visibility = 'hidden';
+document.getElementById('temperature-control2-div').style.visibility = 'hidden';
+document.getElementById('temperature-monitor2-div').style.visibility = 'hidden';
 document.getElementById('connecting-div').innerHTML = '<p>attempting to connect to aws iot...</p>';
 document.getElementById('temperature-control-div').innerHTML = '<p>getting latest status...</p>';
 document.getElementById('temperature-monitor-div').innerHTML = '';
+document.getElementById('temperature-control2-div').innerHTML = '<p>getting latest status...</p>';
+document.getElementById('temperature-monitor2-div').innerHTML = '';

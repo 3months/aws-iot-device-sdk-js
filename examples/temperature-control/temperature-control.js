@@ -13,6 +13,11 @@
  * permissions and limitations under the License.
  */
 
+const THING_TEMPERATURE_CONTROL
+  = process.env.TEMPERATURE_CONTROL || 'TemperatureControl'
+const THING_TEMPERATURE_STATUS
+  = process.env.TEMPERATURE_STATUS || 'TemperatureStatus'
+
 //node.js deps
 
 //npm deps
@@ -182,10 +187,10 @@ function processTest(args) {
       host: args.Host
    });
 
-   thingShadows.register('TemperatureControl', {
+   thingShadows.register(THING_TEMPERATURE_CONTROL, {
       persistentSubscribe: true
    });
-   thingShadows.register('TemperatureStatus', {
+   thingShadows.register(THING_TEMPERATURE_STATUS, {
       persistentSubscribe: true
    });
 
@@ -246,7 +251,7 @@ function processTest(args) {
                deviceControlState.enabled = (deviceControlState.enabled === true ? false : true);
 
                if (networkEnabled === true) {
-                  opClientToken = thingShadows.update('TemperatureControl', {
+                  opClientToken = thingShadows.update(THING_TEMPERATURE_CONTROL, {
                      state: {
                         desired: deviceControlState
                      }
@@ -274,7 +279,7 @@ function processTest(args) {
                lcd5.setDisplay(networkStatus);
                log.log('network ' + (networkEnabled ? 'connected' : 'disconnected'));
                //
-               // Simulate a network connection/disconnection 
+               // Simulate a network connection/disconnection
                //
                if (networkEnabled) {
                   thingShadows.setConnectionStatus(true);
@@ -284,7 +289,7 @@ function processTest(args) {
                   // get a 'rejected' status if another entity has updated this thing shadow
                   // in the meantime and we will have to re-sync.
                   //
-                  if (thingShadows.update('TemperatureControl', {
+                  if (thingShadows.update(THING_TEMPERATURE_CONTROL, {
                         state: {
                            desired: deviceControlState
                         }
@@ -317,7 +322,7 @@ function processTest(args) {
 
          deviceControlState.setPoint++;
          if (networkEnabled === true) {
-            opClientToken = thingShadows.update('TemperatureControl', {
+            opClientToken = thingShadows.update(THING_TEMPERATURE_CONTROL, {
                state: {
                   desired: deviceControlState
                }
@@ -344,7 +349,7 @@ function processTest(args) {
 
          deviceControlState.setPoint--;
          if (networkEnabled === true) {
-            opClientToken = thingShadows.update('TemperatureControl', {
+            opClientToken = thingShadows.update(THING_TEMPERATURE_CONTROL, {
                state: {
                   desired: deviceControlState
                }
@@ -368,7 +373,7 @@ function processTest(args) {
    //
    // Simulate the interaction of a mobile application and a remote device via the
    // AWS IoT service.  The simulated remote device is a temperature controller.
-   // Two thing shadows are used: one for control properties (setpoint and on/off) 
+   // Two thing shadows are used: one for control properties (setpoint and on/off)
    // and the other for monitoring properties (interior/exterior temperature, current
    // state).
    //
@@ -381,7 +386,7 @@ function processTest(args) {
          // current state of the thing shadow.
          //
          setTimeout(function() {
-            opClientToken = thingShadows.get('TemperatureControl');
+            opClientToken = thingShadows.get(THING_TEMPERATURE_CONTROL);
             if (opClientToken === null) {
                log.log('operation in progress');
             }
@@ -399,10 +404,10 @@ function processTest(args) {
          //
          // Upon reconnection, re-register our thing shadows.
          //
-         thingShadows.register('TemperatureControl', {
+         thingShadows.register(THING_TEMPERATURE_CONTROL, {
             persistentSubscribe: true
          });
-         thingShadows.register('TemperatureStatus', {
+         thingShadows.register(THING_TEMPERATURE_STATUS, {
             persistentSubscribe: true
          });
          //
@@ -410,7 +415,7 @@ function processTest(args) {
          // with our current state
          //
          setTimeout(function() {
-            opClientToken = thingShadows.update('TemperatureControl', {
+            opClientToken = thingShadows.update(THING_TEMPERATURE_CONTROL, {
                state: {
                   desired: deviceControlState
                }
@@ -454,7 +459,7 @@ function processTest(args) {
             }
          }
          if (statusType === 'accepted') {
-            if (thingName === 'TemperatureControl') {
+            if (thingName === THING_TEMPERATURE_CONTROL) {
                deviceControlState = stateObject.state.desired;
                lcd1.setDisplay(deviceControlState.setPoint + 'F');
                lcd4.setDisplay(deviceControlState.enabled === true ? ' ON' : 'OFF');
@@ -466,7 +471,7 @@ function processTest(args) {
    thingShadows
       .on('delta', function(thingName, stateObject) {
          if (networkEnabled === true) {
-            if (thingName === 'TemperatureControl') {
+            if (thingName === THING_TEMPERATURE_CONTROL) {
                if (!isUndefined(stateObject.state.enabled) &&
                   (stateObject.state.enabled !== deviceControlState.enabled)) {
                   log.log('temperature control ' + (stateObject.state.enabled ? 'enabled' : 'disabled'));
@@ -474,7 +479,7 @@ function processTest(args) {
                deviceControlState = stateObject.state;
                lcd1.setDisplay(deviceControlState.setPoint + 'F');
                lcd4.setDisplay(deviceControlState.enabled === true ? ' ON' : 'OFF');
-            } else if (thingName === 'TemperatureStatus') {
+            } else if (thingName === THING_TEMPERATURE_STATUS) {
                if (!isUndefined(stateObject.state.intTemp)) {
                   deviceMonitorState.intTemp = stateObject.state.intTemp;
                }
@@ -529,7 +534,7 @@ function processTest(args) {
          //
          if ((networkEnabled === true) &&
             (deviceMonitorState.intTemp !== currentInteriorTemp)) {
-            opClientToken = thingShadows.update('TemperatureStatus', {
+            opClientToken = thingShadows.update(THING_TEMPERATURE_STATUS, {
                state: {
                   desired: deviceMonitorState
                }
